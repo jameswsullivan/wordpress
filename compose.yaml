@@ -1,0 +1,66 @@
+name: wordpress
+
+services:
+  wordpress-apache-php:
+    build:
+      context: .
+      dockerfile: apache-php.dockerfile
+    image: wordpress-apache-php:latest
+    container_name: wordpress-apache-php
+    hostname: wordpress-apache-php
+    networks:
+      wordpress:
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./data/html:/var/www/html
+      - ./config/000-default.conf:/etc/apache2/sites-available/000-default.conf
+    environment:
+      SERVER_NAME: "localhost"
+      DEBIAN_FRONTEND: "noninteractive"
+      LC_ALL: "en_US.UTF-8"
+      LANG: "en_US.UTF-8"
+      DOCUMENT_ROOT: "/var/www/html"
+      SITE_CONFIG_DIR: "/etc/apache2/sites-available"
+      CERT_DIR: "/opt/cert"
+      PHP_MEMORY_LIMIT: "4096M"
+      PHP_POST_MAX_SIZE: "4096M"
+      PHP_UPLOAD_MAX_FILESIZE: "4096M"
+      LOG_PHP_ERROR: "log_errors = On"
+      PHP_LOG_FILE: "error_log = php_errors.log"
+      PHP_INI: "/etc/php/8.4/apache2/php.ini"
+
+  wordpress-mysql:
+    build:
+      context: .
+      dockerfile: mysql.dockerfile
+    image: wordpress-mysql:latest
+    container_name: wordpress-mysql
+    hostname: wordpress-mysql
+    restart: unless-stopped
+    volumes:
+      - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "wordpress"
+    networks:
+      wordpress:
+
+  wordpress-phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: wordpress-phpmyadmin
+    hostname: wordpress-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - 8080:80
+    environment:
+      PMA_HOST: wordpress-mysql
+    networks:
+      wordpress:
+
+networks:
+  wordpress:
+
+volumes:
+  mysql-data:
+    driver: local
